@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body { margin: 0; }
+button, a { -webkit-tap-highlight-color: transparent; }
+.dot-grid {
+  background-image: radial-gradient(rgba(118, 103, 245, 0.35) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
+}
+.scrollbar { scrollbar-width: thin; scrollbar-color: rgba(118, 103, 245, 0.2) transparent; }
+.markdown > *:first-child { margin-top: 0; }
+.markdown > *:last-child { margin-bottom: 0; }
+.markdown p { margin: 0.7em 0; }
+.markdown ul, .markdown ol { margin: 0.7em 0; padding-left: 1.35rem; }
+.markdown ul { list-style: disc; }
+.markdown ol { list-style: decimal; }
+.markdown li { margin: 0.25em 0; }
+.markdown h1, .markdown h2, .markdown h3 { margin: 1em 0 0.45em; font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #17162b; }
+.dark .markdown h1, .dark .markdown h2, .dark .markdown h3 { color: white; }
+.markdown code { border-radius: 0.4rem; background: rgba(118, 103, 245, 0.09); padding: 0.12rem 0.35rem; font-size: 0.82em; }
+.markdown pre { overflow-x: auto; border-radius: 0.9rem; background: #17162b; padding: 1rem; color: #f8fafc; }
+.markdown pre code { background: transparent; padding: 0; }
+.markdown blockquote { margin: 0.8em 0; border-left: 3px solid #7667f5; padding-left: 1rem; color: #64748b; }
