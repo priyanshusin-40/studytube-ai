@@ -7,6 +7,7 @@ import chatRoutes from './routes/chatRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
 
 export const app = express();
+app.set('trust proxy', 1);
 
 app.disable('x-powered-by');
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
