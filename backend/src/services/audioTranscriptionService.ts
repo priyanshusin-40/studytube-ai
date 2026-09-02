@@ -2,7 +2,7 @@ import { mkdtemp, readdir, rm, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
-import { createPartFromUri, createUserContent, type GenerateContentResponse } from '@google/genai';
+import { ApiError, createPartFromUri, createUserContent, type GenerateContentResponse } from '@google/genai';
 import { env } from '../config/env.js';
 import type { TranscriptSegment } from '../types/index.js';
 import { AppError } from '../utils/appError.js';
@@ -115,6 +115,97 @@ export function extractTimedTranscript(response: GenerateContentResponse): Trans
   return groupTimedWords(words.sort((left, right) => left.start - right.start));
 }
 
+export function parseStructuredTranscript(value: string | undefined): TranscriptSegment[] {
+  if (!value) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed
+    .flatMap((item): TranscriptSegment[] => {
+      if (!item || typeof item !== 'object') return [];
+      const candidate = item as Record<string, unknown>;
+      const text = typeof candidate.text === 'string' ? candidate.text.trim() : '';
+      const start = Number(candidate.start);
+      const duration = Number(candidate.duration);
+      if (!text || !Number.isFinite(start) || start < 0 || !Number.isFinite(duration) || duration <= 0) return [];
+      return [{ text, start, duration }];
+    })
+    .sort((left, right) => left.start - right.start);
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function transcribePublicYouTubeUrl(videoId: string): Promise<TranscriptSegment[]> {
+  const url = canonicalYouTubeUrl(videoId);
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await geminiClient.models.generateContent({
+        model: env.GEMINI_VIDEO_MODEL,
+        contents: [
+          { fileData: { fileUri: url } },
+          {
+            text: [
+              'Listen carefully to the complete audio track and transcribe every intelligible spoken utterance.',
+              'Include isolated words, single numbers, and very short speech. Do not summarize.',
+              'Return timestamped segments no longer than 15 seconds and use the actual video timeline.',
+              'Exclude descriptions of visuals, music, sound effects, and silence.',
+              'Return an empty array only after checking the entire audio and finding no speech.',
+            ].join(' '),
+          },
+        ],
+        config: {
+          responseMimeType: 'application/json',
+          responseJsonSchema: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['text', 'start', 'duration'],
+              properties: {
+                text: { type: 'string' },
+                start: { type: 'number' },
+                duration: { type: 'number' },
+              },
+            },
+          },
+        },
+      });
+      const transcript = parseStructuredTranscript(response.text);
+      if (transcript.some((segment) => segment.start + segment.duration > env.AUDIO_FALLBACK_MAX_SECONDS)) {
+        throw new AppError(
+          `Audio fallback supports videos up to ${Math.floor(env.AUDIO_FALLBACK_MAX_SECONDS / 60)} minutes.`,
+          413,
+          'AUDIO_TOO_LONG',
+        );
+      }
+      if (transcript.length === 0) {
+        throw new AppError(
+          'No intelligible speech was found in this public video.',
+          422,
+          'SPEECH_TO_TEXT_EMPTY',
+        );
+      }
+      return transcript;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      lastError = error;
+      const retryable = error instanceof ApiError && [500, 502, 503, 504].includes(error.status);
+      if (!retryable || attempt === 2) break;
+      await wait(750 * (2 ** attempt));
+    }
+  }
+
+  throw normalizeGeminiError(lastError, 'public YouTube transcription');
+}
+
 async function findDownloadedAudio(directory: string): Promise<{ path: string; mimeType: string }> {
   const files = await readdir(directory);
   for (const file of files) {
@@ -153,11 +244,7 @@ export async function transcribeYouTubeAudio(videoId: string): Promise<Transcrip
       }) as YtDlpMetadata;
     } catch (error) {
       console.error('YouTube audio metadata lookup failed:', safeErrorForLog(error));
-      throw new AppError(
-        'The video is unavailable or its audio cannot be accessed.',
-        422,
-        'AUDIO_EXTRACTION_FAILED',
-      );
+      return transcribePublicYouTubeUrl(videoId);
     }
 
     const duration = Number(metadata.duration);
@@ -188,11 +275,7 @@ export async function transcribeYouTubeAudio(videoId: string): Promise<Transcrip
       });
     } catch (error) {
       console.error('YouTube audio extraction failed:', safeErrorForLog(error));
-      throw new AppError(
-        'Captions were unavailable and the video audio could not be extracted.',
-        422,
-        'AUDIO_EXTRACTION_FAILED',
-      );
+      return transcribePublicYouTubeUrl(videoId);
     }
 
     const audio = await findDownloadedAudio(directory);

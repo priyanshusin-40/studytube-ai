@@ -4,6 +4,7 @@ import {
   extractTimedTranscript,
   groupTimedWords,
   parseGeminiOffset,
+  parseStructuredTranscript,
   youtubeDownloaderBaseFlags,
 } from './audioTranscriptionService.js';
 
@@ -49,5 +50,18 @@ describe('audio transcription timestamps', () => {
     expect(extractTimedTranscript(response)).toEqual([
       { text: 'StudyTube works.', start: 0.1, duration: 1 },
     ]);
+  });
+
+  it('validates and sorts structured public-video transcript segments', () => {
+    expect(parseStructuredTranscript(JSON.stringify([
+      { text: ' Second segment ', start: 8, duration: 2 },
+      { text: 'First segment', start: 1.5, duration: 3 },
+      { text: '', start: 0, duration: 1 },
+      { text: 'Invalid time', start: -1, duration: 1 },
+    ]))).toEqual([
+      { text: 'First segment', start: 1.5, duration: 3 },
+      { text: 'Second segment', start: 8, duration: 2 },
+    ]);
+    expect(parseStructuredTranscript('not json')).toEqual([]);
   });
 });

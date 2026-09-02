@@ -17,6 +17,7 @@ const schema = z.object({
   GEMINI_EMBEDDING_MODEL: z.string().default('gemini-embedding-2'),
   GEMINI_EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().default(1536),
   GEMINI_TRANSCRIPTION_MODEL: z.string().default('gemini-3.5-transcribe'),
+  GEMINI_VIDEO_MODEL: z.string().default('gemini-3.6-flash'),
   AUDIO_FALLBACK_ENABLED: z.string().default('true').transform((value) => value.toLowerCase() === 'true'),
   AUDIO_FALLBACK_MAX_SECONDS: z.coerce.number().int().min(1).max(1800).default(1800),
   AUDIO_FALLBACK_MAX_BYTES: z.coerce.number().int().min(1).default(100 * 1024 * 1024),
