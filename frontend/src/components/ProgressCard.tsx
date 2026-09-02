@@ -1,6 +1,6 @@
 import { Check, LoaderCircle } from 'lucide-react';
 
-const steps = ['Fetching transcript', 'Processing transcript', 'Creating embeddings', 'Building knowledge base'];
+const steps = ['Checking captions or audio', 'Processing transcript', 'Creating embeddings', 'Building knowledge base'];
 
 export function ProgressCard({ step }: { step: number }) {
   return (
@@ -9,7 +9,7 @@ export function ProgressCard({ step }: { step: number }) {
         <LoaderCircle className="animate-spin text-violet" size={22} />
         <div>
           <p className="font-semibold">Preparing your study space</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Longer videos can take a minute.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Audio transcription can take several minutes.</p>
         </div>
       </div>
       <div className="space-y-3">

@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import type { TranscriptSegment } from '../types/index.js';
 import { AppError } from '../utils/appError.js';
 import { canonicalYouTubeUrl, extractYouTubeId } from '../utils/youtube.js';
+import { transcribeYouTubeAudio } from './audioTranscriptionService.js';
 
 interface OEmbedResponse {
   title: string;
@@ -17,6 +18,7 @@ export interface YouTubeVideoData {
   channelName: string | null;
   thumbnailUrl: string;
   transcript: TranscriptSegment[];
+  transcriptSource: 'captions' | 'gemini-audio';
 }
 
 export function normalizeTranscriptTiming(
@@ -33,7 +35,10 @@ export function normalizeTranscriptTiming(
   }));
 }
 
-async function fetchMetadata(url: string, videoId: string): Promise<Omit<YouTubeVideoData, 'transcript'>> {
+async function fetchMetadata(
+  url: string,
+  videoId: string,
+): Promise<Omit<YouTubeVideoData, 'transcript' | 'transcriptSource'>> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8_000);
   try {
@@ -82,22 +87,18 @@ export async function getYouTubeVideo(inputUrl: string): Promise<YouTubeVideoDat
         'TRANSCRIPT_TOO_LONG',
       );
     }
-    return { ...(await metadataPromise), transcript };
+    return { ...(await metadataPromise), transcript, transcriptSource: 'captions' };
   } catch (error) {
-    await metadataPromise;
     if (error instanceof AppError) throw error;
-    const detail = error instanceof Error ? error.message.toLowerCase() : '';
-    if (detail.includes('disabled') || detail.includes('available') || detail.includes('empty')) {
-      throw new AppError(
-        'A transcript is not available for this video. Try a video with captions enabled.',
-        422,
-        'TRANSCRIPT_UNAVAILABLE',
-      );
+    const metadata = await metadataPromise;
+    if (!env.AUDIO_FALLBACK_ENABLED) {
+      throw new AppError('A transcript is not available for this video.', 422, 'TRANSCRIPT_UNAVAILABLE');
     }
-    throw new AppError(
-      'We could not retrieve this video transcript. Please try again shortly.',
-      502,
-      'TRANSCRIPT_FETCH_FAILED',
-    );
+    const transcript = await transcribeYouTubeAudio(youtubeId);
+    const totalChars = transcript.reduce((sum, segment) => sum + segment.text.length, 0);
+    if (totalChars > env.MAX_TRANSCRIPT_CHARS) {
+      throw new AppError('This transcript is too long to process safely.', 413, 'TRANSCRIPT_TOO_LONG');
+    }
+    return { ...metadata, transcript, transcriptSource: 'gemini-audio' };
   }
 }

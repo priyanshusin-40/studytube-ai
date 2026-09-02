@@ -10,6 +10,7 @@ export function mapVideo(row: QueryResultRow): VideoRecord {
     channelName: row.channel_name ? String(row.channel_name) : null,
     thumbnailUrl: row.thumbnail_url ? String(row.thumbnail_url) : null,
     transcriptStatus: row.transcript_status as VideoRecord['transcriptStatus'],
+    transcriptSource: (row.transcript_source as VideoRecord['transcriptSource']) ?? null,
     chunkCount: Number(row.chunk_count),
     createdAt: new Date(row.created_at as string | Date).toISOString(),
     updatedAt: new Date(row.updated_at as string | Date).toISOString(),

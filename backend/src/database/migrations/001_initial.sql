@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS videos (
   thumbnail_url text,
   transcript_status text NOT NULL DEFAULT 'processing'
     CHECK (transcript_status IN ('processing', 'ready', 'failed')),
+  transcript_source text CHECK (transcript_source IN ('captions', 'gemini-audio')),
   chunk_count integer NOT NULL DEFAULT 0,
   embedding_provider text,
   embedding_model text,
@@ -30,6 +31,17 @@ CREATE TABLE IF NOT EXISTS videos (
 ALTER TABLE videos ADD COLUMN IF NOT EXISTS embedding_provider text;
 ALTER TABLE videos ADD COLUMN IF NOT EXISTS embedding_model text;
 ALTER TABLE videos ADD COLUMN IF NOT EXISTS embedding_dimensions integer;
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS transcript_source text;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'videos_transcript_source_check' AND conrelid = 'videos'::regclass
+  ) THEN
+    ALTER TABLE videos ADD CONSTRAINT videos_transcript_source_check
+      CHECK (transcript_source IN ('captions', 'gemini-audio'));
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS transcript_chunks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

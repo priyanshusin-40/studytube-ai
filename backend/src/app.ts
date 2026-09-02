@@ -1,7 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
-import { env } from './config/env.js';
+import { allowedClientOrigins } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import chatRoutes from './routes/chatRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
@@ -11,7 +11,17 @@ app.set('trust proxy', 1);
 
 app.disable('x-powered-by');
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(cors({ origin: env.CLIENT_URL, methods: ['GET', 'POST', 'PATCH', 'DELETE'], credentials: false }));
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedClientOrigins.includes(origin.replace(/\/$/, ''))) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error('CORS_ORIGIN_DENIED'));
+  },
+  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  credentials: false,
+}));
 app.use(express.json({ limit: '64kb' }));
 
 app.get('/api/health', (_request, response) => {

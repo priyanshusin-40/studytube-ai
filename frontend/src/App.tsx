@@ -12,6 +12,7 @@ export default function App() {
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -19,14 +20,14 @@ export default function App() {
   const [dark, setDark] = useState(() => localStorage.getItem('studytube-theme') === 'dark');
   const timerRef = useRef<number | null>(null);
 
-  const notify = (message: string, type: ToastData['type'] = 'error') => {
+  const notify = useCallback((message: string, type: ToastData['type'] = 'error') => {
     const item = { id: Date.now(), message, type };
     setToast(item);
     window.setTimeout(() => setToast((current) => current?.id === item.id ? null : current), 4500);
-  };
+  }, []);
   const refreshChats = useCallback(async () => {
     try { setChats((await api.listChats()).chats); } catch (error) { notify((error as Error).message); }
-  }, []);
+  }, [notify]);
   useEffect(() => { void refreshChats(); }, [refreshChats]);
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -88,15 +89,15 @@ export default function App() {
 
   return (
     <div className="flex h-dvh overflow-hidden bg-cream text-ink antialiased dark:bg-[#1c1a2c] dark:text-slate-100">
-      <Sidebar chats={chats} activeId={activeChat?.id ?? null} open={sidebarOpen} onClose={() => setSidebarOpen(false)} onNewVideo={() => setActiveChat(null)} onSelect={(id) => void openChat(id)} onDelete={(id) => void remove(id)} onRename={(id, title) => void rename(id, title)} />
+      <Sidebar chats={chats} activeId={activeChat?.id ?? null} open={sidebarOpen} collapsed={sidebarCollapsed} onClose={() => setSidebarOpen(false)} onToggleCollapse={() => setSidebarCollapsed((current) => !current)} onNewVideo={() => setActiveChat(null)} onSelect={(id) => void openChat(id)} onDelete={(id) => void remove(id)} onRename={(id, title) => void rename(id, title)} />
       {activeChat ? (
         <ChatView chat={activeChat} sending={sending} dark={dark} onToggleTheme={() => setDark(!dark)} onMenu={() => setSidebarOpen(true)} onNewVideo={() => setActiveChat(null)} onSend={send} />
       ) : (
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-[72px] shrink-0 items-center justify-between border-b border-black/[0.05] px-4 dark:border-white/[0.06] sm:px-7">
-            <div className="flex items-center gap-3 lg:hidden"><button onClick={() => setSidebarOpen(true)} className="rounded-xl p-2 hover:bg-black/5" aria-label="Open sidebar"><Menu size={20} /></button><Brand compact /></div>
+            <div className="flex items-center gap-2 lg:hidden"><button onClick={() => setSidebarOpen(true)} className="grid min-h-11 min-w-11 place-items-center rounded-xl hover:bg-black/5" aria-label="Open sidebar"><Menu size={20} /></button><Brand compact /></div>
             <span className="hidden text-xs font-semibold text-slate-400 lg:block">AI-powered video learning</span>
-            <button onClick={() => setDark(!dark)} className="rounded-xl border border-black/[0.06] bg-white p-2.5 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300" aria-label="Toggle theme">{dark ? <Sun size={17} /> : <Moon size={17} />}</button>
+            <button onClick={() => setDark(!dark)} className="grid min-h-11 min-w-11 place-items-center rounded-xl border border-black/[0.06] bg-white text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300" aria-label="Toggle theme">{dark ? <Sun size={17} /> : <Moon size={17} />}</button>
           </header>
           <Landing onAnalyze={(url) => void analyze(url)} loading={loading} progress={progress} />
         </div>

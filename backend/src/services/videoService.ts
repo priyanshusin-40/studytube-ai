@@ -34,7 +34,7 @@ export async function processVideo(inputUrl: string): Promise<{ video: VideoReco
   }
   if (
     existing.rows[0]?.transcript_status === 'processing' &&
-    Date.now() - new Date(existing.rows[0].updated_at as string | Date).getTime() < 10 * 60_000
+    Date.now() - new Date(existing.rows[0].updated_at as string | Date).getTime() < env.PROCESSING_LEASE_MS
   ) {
     throw new AppError('This video is already being processed. Please try again shortly.', 409, 'VIDEO_PROCESSING');
   }
@@ -42,13 +42,14 @@ export async function processVideo(inputUrl: string): Promise<{ video: VideoReco
   const videoData = await getYouTubeVideo(inputUrl);
   const pending = await pool.query(
     `INSERT INTO videos (
-       youtube_id, url, title, channel_name, thumbnail_url, transcript_status,
+       youtube_id, url, title, channel_name, thumbnail_url, transcript_status, transcript_source,
        embedding_provider, embedding_model, embedding_dimensions, error_message
      )
-     VALUES ($1, $2, $3, $4, $5, 'processing', 'google-gemini', $6, $7, NULL)
+     VALUES ($1, $2, $3, $4, $5, 'processing', $6, 'google-gemini', $7, $8, NULL)
      ON CONFLICT (youtube_id) DO UPDATE SET
        url = EXCLUDED.url, title = EXCLUDED.title, channel_name = EXCLUDED.channel_name,
        thumbnail_url = EXCLUDED.thumbnail_url, transcript_status = 'processing',
+       transcript_source = EXCLUDED.transcript_source,
        embedding_provider = EXCLUDED.embedding_provider, embedding_model = EXCLUDED.embedding_model,
        embedding_dimensions = EXCLUDED.embedding_dimensions, error_message = NULL,
        updated_at = now()
@@ -59,6 +60,7 @@ export async function processVideo(inputUrl: string): Promise<{ video: VideoReco
       videoData.title,
       videoData.channelName,
       videoData.thumbnailUrl,
+      videoData.transcriptSource,
       env.GEMINI_EMBEDDING_MODEL,
       env.GEMINI_EMBEDDING_DIMENSIONS,
     ],
@@ -87,11 +89,17 @@ export async function processVideo(inputUrl: string): Promise<{ video: VideoReco
         );
       }
       const ready = await client.query(
-        `UPDATE videos SET transcript_status = 'ready', chunk_count = $2,
+        `UPDATE videos SET transcript_status = 'ready', chunk_count = $2, transcript_source = $5,
             embedding_provider = 'google-gemini', embedding_model = $3, embedding_dimensions = $4,
             error_message = NULL, updated_at = now()
          WHERE id = $1 RETURNING *`,
-        [videoId, chunks.length, env.GEMINI_EMBEDDING_MODEL, env.GEMINI_EMBEDDING_DIMENSIONS],
+        [
+          videoId,
+          chunks.length,
+          env.GEMINI_EMBEDDING_MODEL,
+          env.GEMINI_EMBEDDING_DIMENSIONS,
+          videoData.transcriptSource,
+        ],
       );
       await client.query('COMMIT');
       return { video: mapVideo(ready.rows[0]!), reused: false };

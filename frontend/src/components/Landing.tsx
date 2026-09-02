@@ -16,16 +16,16 @@ export function Landing({ onAnalyze, loading, progress }: { onAnalyze: (url: str
         <div className="absolute bottom-0 left-[15%] h-72 w-72 rounded-full bg-coral/10 blur-3xl" />
         <div className="dot-grid absolute inset-0 opacity-40 dark:opacity-10" />
       </div>
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col justify-center px-5 py-14 sm:px-10 lg:py-20">
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col justify-start px-4 py-10 sm:px-10 sm:py-14 lg:justify-center lg:py-20">
         <div className="mx-auto max-w-4xl text-center">
-          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-violet/20 bg-violet/[0.07] px-4 py-2 text-xs font-bold uppercase tracking-[0.15em] text-violet dark:bg-violet/15">
+          <div className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full border border-violet/20 bg-violet/[0.07] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-violet dark:bg-violet/15 sm:mb-7 sm:px-4 sm:text-xs sm:tracking-[0.15em]">
             <Sparkles size={14} /> Learn at the speed of curiosity
           </div>
-          <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-[-0.045em] text-ink dark:text-white sm:text-6xl lg:text-7xl">
-            Turn any video into<br /><span className="text-violet">a conversation.</span>
+          <h1 className="font-display text-[2.35rem] font-bold leading-[1.05] tracking-[-0.045em] text-ink dark:text-white sm:text-6xl lg:text-7xl">
+            Turn any video into<span className="hidden sm:inline"><br /></span>{' '}<span className="text-violet">a conversation.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg">
-            Paste a captioned YouTube video. StudyTube builds a private knowledge base, then gives you grounded answers with exact moments to revisit.
+            Paste a YouTube video. StudyTube uses captions when available and can transcribe spoken audio when they are not, then gives you grounded answers with exact moments to revisit.
           </p>
 
           {!loading ? (
@@ -38,7 +38,6 @@ export function Landing({ onAnalyze, loading, progress }: { onAnalyze: (url: str
                   onChange={(event) => setUrl(event.target.value)}
                   type="url"
                   required
-                  autoFocus
                   placeholder="Paste a YouTube URL"
                   className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
                 />
@@ -51,9 +50,9 @@ export function Landing({ onAnalyze, loading, progress }: { onAnalyze: (url: str
         </div>
 
         {!loading && (
-          <div className="mx-auto mt-16 grid max-w-4xl gap-3 sm:grid-cols-3">
+          <div className="mx-auto mt-10 grid max-w-4xl gap-3 sm:mt-16 sm:grid-cols-3">
             {[
-              [Captions, 'Transcript aware', 'Captions are cleaned and split while preserving real timestamps.'],
+              [Captions, 'Transcript aware', 'Captions or spoken audio are processed while preserving real timestamps.'],
               [DatabaseZap, 'Semantic recall', 'Only the moments most relevant to your question reach the AI.'],
               [MessageCircleQuestion, 'Grounded answers', 'Each response links back to the exact source moments.'],
             ].map(([Icon, title, description]) => {

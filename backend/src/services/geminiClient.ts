@@ -1,6 +1,7 @@
 import { ApiError, GoogleGenAI } from '@google/genai';
 import { env } from '../config/env.js';
 import { AppError } from '../utils/appError.js';
+import { safeErrorForLog } from '../utils/logging.js';
 
 export const geminiClient = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
@@ -22,7 +23,7 @@ export function normalizeGeminiError(error: unknown, operation: string): AppErro
       );
     }
     if (error.status === 400 || error.status === 404) {
-      console.error(`Gemini rejected the ${operation} request: ${error.message}`);
+      console.error(`Gemini rejected the ${operation} request:`, safeErrorForLog(error));
       return new AppError(
         'Gemini rejected the request. Check the configured Gemini model names.',
         503,
@@ -31,6 +32,6 @@ export function normalizeGeminiError(error: unknown, operation: string): AppErro
     }
   }
 
-  console.error(`Gemini ${operation} failed:`, error instanceof Error ? error.message : error);
+  console.error(`Gemini ${operation} failed:`, safeErrorForLog(error));
   return new AppError(`The Gemini ${operation} service is temporarily unavailable.`, 502, 'AI_PROVIDER_ERROR');
 }

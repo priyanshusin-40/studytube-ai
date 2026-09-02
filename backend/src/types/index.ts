@@ -19,6 +19,7 @@ export interface VideoRecord {
   channelName: string | null;
   thumbnailUrl: string | null;
   transcriptStatus: 'processing' | 'ready' | 'failed';
+  transcriptSource: 'captions' | 'gemini-audio' | null;
   chunkCount: number;
   createdAt: string;
   updatedAt: string;

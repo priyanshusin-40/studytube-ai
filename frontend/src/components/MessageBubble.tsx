@@ -18,8 +18,8 @@ export function MessageBubble({ message }: { message: Message }) {
       <div className={`mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-xl ${assistant ? 'bg-violet text-white' : 'bg-ink text-white dark:bg-white dark:text-ink'}`}>
         {assistant ? <Bot size={16} /> : <User size={15} />}
       </div>
-      <div className={`min-w-0 max-w-[86%] sm:max-w-[78%] ${assistant ? '' : 'flex flex-col items-end'}`}>
-        <div className={`rounded-[22px] px-5 py-4 text-sm leading-7 ${assistant ? 'border border-black/[0.06] bg-white text-slate-700 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.055] dark:text-slate-200' : 'bg-ink text-white dark:bg-white dark:text-ink'}`}>
+      <div className={`min-w-0 max-w-[calc(100%-2.75rem)] sm:max-w-[78%] ${assistant ? '' : 'flex flex-col items-end'}`}>
+        <div className={`max-w-full overflow-hidden rounded-[22px] px-4 py-3.5 text-sm leading-7 sm:px-5 sm:py-4 ${assistant ? 'border border-black/[0.06] bg-white text-slate-700 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.055] dark:text-slate-200' : 'bg-ink text-white dark:bg-white dark:text-ink'}`}>
           {assistant ? (
             <div className="markdown">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>

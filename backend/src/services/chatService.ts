@@ -43,7 +43,7 @@ export async function getChat(id: string) {
   const session = await pool.query(
     `SELECT cs.*, v.youtube_id, v.url, v.title AS video_title, v.channel_name,
             v.thumbnail_url, v.transcript_status, v.chunk_count, v.created_at AS video_created_at,
-            v.updated_at AS video_updated_at
+            v.updated_at AS video_updated_at, v.transcript_source
        FROM chat_sessions cs JOIN videos v ON v.id = cs.video_id WHERE cs.id = $1`,
     [id],
   );
@@ -58,6 +58,7 @@ export async function getChat(id: string) {
     channel_name: row.channel_name,
     thumbnail_url: row.thumbnail_url,
     transcript_status: row.transcript_status,
+    transcript_source: row.transcript_source,
     chunk_count: row.chunk_count,
     created_at: row.video_created_at,
     updated_at: row.video_updated_at,

@@ -5,4 +5,14 @@ export default defineConfig({
   plugins: [react()],
   envDir: '..',
   server: { port: 5173 },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          markdown: ['react-markdown', 'remark-gfm'],
+        },
+      },
+    },
+  },
 });

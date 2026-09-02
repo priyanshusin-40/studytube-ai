@@ -1,4 +1,4 @@
-import { Edit3, MessageSquareText, PanelLeftClose, Plus, Trash2, X } from 'lucide-react';
+import { Edit3, MessageSquareText, PanelLeftClose, PanelLeftOpen, Plus, Trash2, X } from 'lucide-react';
 import type { ChatSummary } from '../types';
 import { Brand } from './Brand';
 
@@ -6,28 +6,30 @@ interface Props {
   chats: ChatSummary[];
   activeId: string | null;
   open: boolean;
+  collapsed: boolean;
   onClose: () => void;
+  onToggleCollapse: () => void;
   onNewVideo: () => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
 }
 
-export function Sidebar({ chats, activeId, open, onClose, onNewVideo, onSelect, onDelete, onRename }: Props) {
+export function Sidebar({ chats, activeId, open, collapsed, onClose, onToggleCollapse, onNewVideo, onSelect, onDelete, onRename }: Props) {
   return (
     <>
       {open && <button aria-label="Close sidebar" onClick={onClose} className="fixed inset-0 z-40 bg-ink/30 backdrop-blur-sm lg:hidden" />}
-      <aside className={`fixed inset-y-0 left-0 z-50 flex w-[290px] flex-col border-r border-black/[0.06] bg-[#f3f1eb] p-4 transition-transform dark:border-white/[0.07] dark:bg-[#171625] lg:static lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center justify-between px-2 py-2">
-          <Brand />
+      <aside className={`fixed inset-y-0 left-0 z-50 flex w-[min(88vw,320px)] flex-col border-r border-black/[0.06] bg-[#f3f1eb] p-4 transition-[width,transform] duration-200 dark:border-white/[0.07] dark:bg-[#171625] lg:static lg:translate-x-0 ${collapsed ? 'lg:w-20 lg:px-3' : 'lg:w-[290px]'} ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className={`flex items-center py-2 ${collapsed ? 'lg:justify-center lg:px-0' : 'justify-between px-2'}`}>
+          <div className={collapsed ? 'lg:hidden' : ''}><Brand /></div>
           <button onClick={onClose} className="rounded-xl p-2 text-slate-500 hover:bg-black/5 lg:hidden" aria-label="Close sidebar"><X size={19} /></button>
-          <button onClick={onClose} className="hidden rounded-xl p-2 text-slate-400 hover:bg-black/5 lg:block" aria-label="Collapse sidebar"><PanelLeftClose size={18} /></button>
+          <button onClick={onToggleCollapse} className="hidden min-h-11 min-w-11 place-items-center rounded-xl p-2 text-slate-400 hover:bg-black/5 lg:grid" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
         </div>
-        <button onClick={onNewVideo} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-ink px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-ink/10 transition hover:-translate-y-0.5 hover:bg-violet dark:bg-white dark:text-ink dark:hover:bg-violet dark:hover:text-white">
-          <Plus size={17} /> Add new video
+        <button onClick={() => { onNewVideo(); onClose(); }} title={collapsed ? 'Add new video' : undefined} className={`mt-5 flex min-h-12 w-full items-center justify-center rounded-2xl bg-ink text-sm font-bold text-white shadow-lg shadow-ink/10 transition hover:-translate-y-0.5 hover:bg-violet dark:bg-white dark:text-ink dark:hover:bg-violet dark:hover:text-white ${collapsed ? 'lg:px-0' : 'gap-2 px-4'}`}>
+          <Plus size={17} /> <span className={collapsed ? 'lg:hidden' : ''}>Add new video</span>
         </button>
 
-        <div className="mt-7 flex items-center justify-between px-2">
+        <div className={`mt-7 items-center justify-between px-2 ${collapsed ? 'flex lg:hidden' : 'flex'}`}>
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Conversations</span>
           <span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-bold dark:bg-white/10">{chats.length}</span>
         </div>
@@ -38,22 +40,22 @@ export function Sidebar({ chats, activeId, open, onClose, onNewVideo, onSelect, 
             </div>
           )}
           {chats.map((chat) => (
-            <div key={chat.id} className={`group relative rounded-2xl transition ${activeId === chat.id ? 'bg-white shadow-sm dark:bg-white/10' : 'hover:bg-black/[0.035] dark:hover:bg-white/[0.05]'}`}>
-              <button onClick={() => { onSelect(chat.id); onClose(); }} className="flex w-full items-start gap-3 px-3 py-3.5 pr-16 text-left">
+            <div key={chat.id} title={collapsed ? chat.title : undefined} className={`group relative rounded-2xl transition ${activeId === chat.id ? 'bg-white shadow-sm dark:bg-white/10' : 'hover:bg-black/[0.035] dark:hover:bg-white/[0.05]'}`}>
+              <button onClick={() => { onSelect(chat.id); onClose(); }} className={`flex min-h-12 w-full items-start text-left ${collapsed ? 'lg:justify-center lg:px-2 lg:py-2.5' : 'gap-3 px-3 py-3.5 pr-20'}`}>
                 <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl ${activeId === chat.id ? 'bg-violet text-white' : 'bg-black/[0.05] text-slate-500 dark:bg-white/10'}`}><MessageSquareText size={15} /></span>
-                <span className="min-w-0">
+                <span className={`min-w-0 ${collapsed ? 'lg:hidden' : ''}`}>
                   <span className="block truncate text-xs font-bold">{chat.title}</span>
                   <span className="mt-1 block truncate text-[10px] text-slate-400">{chat.videoTitle}</span>
                 </span>
               </button>
-              <div className="absolute right-2 top-3 flex opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
-                <button onClick={() => { const title = window.prompt('Rename conversation', chat.title); if (title?.trim()) onRename(chat.id, title.trim()); }} className="rounded-lg p-1.5 text-slate-400 hover:bg-black/5 hover:text-violet" aria-label="Rename chat"><Edit3 size={13} /></button>
-                <button onClick={() => onDelete(chat.id)} className="rounded-lg p-1.5 text-slate-400 hover:bg-coral/10 hover:text-coral" aria-label="Delete chat"><Trash2 size={13} /></button>
+              <div className={`absolute right-2 top-2.5 flex transition ${collapsed ? 'lg:hidden' : ''} opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100`}>
+                <button onClick={() => { const title = window.prompt('Rename conversation', chat.title); if (title?.trim()) onRename(chat.id, title.trim()); }} className="grid min-h-9 min-w-9 place-items-center rounded-lg text-slate-400 hover:bg-black/5 hover:text-violet" aria-label="Rename chat"><Edit3 size={14} /></button>
+                <button onClick={() => onDelete(chat.id)} className="grid min-h-9 min-w-9 place-items-center rounded-lg text-slate-400 hover:bg-coral/10 hover:text-coral" aria-label="Delete chat"><Trash2 size={14} /></button>
               </div>
             </div>
           ))}
         </div>
-        <div className="rounded-2xl border border-black/[0.05] bg-white/50 p-3 text-[10px] leading-4 text-slate-500 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-slate-400">
+        <div className={`rounded-2xl border border-black/[0.05] bg-white/50 p-3 text-[10px] leading-4 text-slate-500 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-slate-400 ${collapsed ? 'lg:hidden' : ''}`}>
           <span className="font-bold text-ink dark:text-white">Privacy note</span><br />Videos are indexed in your configured database. API keys stay on the server.
         </div>
       </aside>
