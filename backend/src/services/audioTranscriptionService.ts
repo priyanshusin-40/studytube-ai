@@ -29,6 +29,18 @@ interface TimedWord {
 const require = createRequire(import.meta.url);
 const ytDlp = require('yt-dlp-exec') as YtDlpRunner;
 
+export function youtubeDownloaderBaseFlags(): Record<string, string | number | boolean> {
+  return {
+    noPlaylist: true,
+    noWarnings: true,
+    socketTimeout: 20,
+    // Current YouTube extraction requires an external JavaScript challenge
+    // runtime. Reuse the exact Node executable already running the backend so
+    // this also works when a hosting provider does not expose `node` on PATH.
+    jsRuntimes: `node:${process.execPath}`,
+  };
+}
+
 const MIME_TYPES: Record<string, string> = {
   '.aac': 'audio/aac',
   '.aiff': 'audio/aiff',
@@ -135,11 +147,9 @@ export async function transcribeYouTubeAudio(videoId: string): Promise<Transcrip
     let metadata: YtDlpMetadata;
     try {
       metadata = await ytDlp(url, {
+        ...youtubeDownloaderBaseFlags(),
         dumpSingleJson: true,
         skipDownload: true,
-        noPlaylist: true,
-        noWarnings: true,
-        socketTimeout: 20,
       }) as YtDlpMetadata;
     } catch (error) {
       console.error('YouTube audio metadata lookup failed:', safeErrorForLog(error));
@@ -168,15 +178,13 @@ export async function transcribeYouTubeAudio(videoId: string): Promise<Transcrip
 
     try {
       await ytDlp(url, {
+        ...youtubeDownloaderBaseFlags(),
         format: 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio',
         output: join(directory, 'audio.%(ext)s'),
-        noPlaylist: true,
-        noWarnings: true,
         noProgress: true,
         quiet: true,
         maxFilesize: env.AUDIO_FALLBACK_MAX_BYTES,
         retries: 2,
-        socketTimeout: 20,
       });
     } catch (error) {
       console.error('YouTube audio extraction failed:', safeErrorForLog(error));

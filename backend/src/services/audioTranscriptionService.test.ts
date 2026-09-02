@@ -1,8 +1,22 @@
 import type { GenerateContentResponse } from '@google/genai';
 import { describe, expect, it } from 'vitest';
-import { extractTimedTranscript, groupTimedWords, parseGeminiOffset } from './audioTranscriptionService.js';
+import {
+  extractTimedTranscript,
+  groupTimedWords,
+  parseGeminiOffset,
+  youtubeDownloaderBaseFlags,
+} from './audioTranscriptionService.js';
 
 describe('audio transcription timestamps', () => {
+  it('enables the running Node executable for YouTube JavaScript challenges', () => {
+    expect(youtubeDownloaderBaseFlags()).toMatchObject({
+      jsRuntimes: `node:${process.execPath}`,
+      noPlaylist: true,
+      noWarnings: true,
+      socketTimeout: 20,
+    });
+  });
+
   it('parses Gemini second offsets without inventing missing values', () => {
     expect(parseGeminiOffset('12.345s')).toBe(12.345);
     expect(parseGeminiOffset(undefined)).toBeNull();
