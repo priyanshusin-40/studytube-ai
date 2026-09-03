@@ -8,6 +8,19 @@ interface Envelope<T> {
   error?: { message: string; code: string };
 }
 
+let authRequiredHandler: (() => void) | undefined;
+
+export function setAuthRequiredHandler(handler: (() => void) | undefined) {
+  authRequiredHandler = handler;
+}
+
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number, public readonly code?: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   let response: Response;
   try {
@@ -22,7 +35,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (response.status === 204) return undefined as T;
   const body = (await response.json().catch(() => null)) as Envelope<T> | null;
   if (!response.ok || !body?.success) {
-    throw new Error(body?.error?.message ?? 'Something went wrong. Please try again.');
+    const error = new ApiError(
+      body?.error?.message ?? 'Something went wrong. Please try again.',
+      response.status,
+      body?.error?.code,
+    );
+    if (error.code === 'AUTH_REQUIRED') authRequiredHandler?.();
+    throw error;
   }
   return body.data;
 }
@@ -53,3 +72,4 @@ export const api = {
     method: 'POST', body: JSON.stringify({ chatId, question }),
   }),
 };
+

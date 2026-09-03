@@ -2,13 +2,19 @@ import type { CookieOptions, Request, Response } from 'express';
 import { env } from '../config/env.js';
 import * as authService from '../services/authService.js';
 
-const cookieOptions: CookieOptions = {
-  httpOnly: true,
-  secure: env.NODE_ENV === 'production',
-  sameSite: 'lax',
-  path: '/',
-  maxAge: env.SESSION_TTL_DAYS * 24 * 60 * 60 * 1000,
-};
+export function getSessionCookieOptions(nodeEnv = env.NODE_ENV): CookieOptions {
+  const isProduction = nodeEnv === 'production';
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    partitioned: isProduction,
+    path: '/',
+    maxAge: env.SESSION_TTL_DAYS * 24 * 60 * 60 * 1000,
+  };
+}
+
+const cookieOptions = getSessionCookieOptions();
 
 export async function register(request: Request, response: Response) {
   const result = await authService.register(request.body.name, request.body.email, request.body.password);
@@ -31,3 +37,4 @@ export async function logout(request: Request, response: Response) {
 export async function me(request: Request, response: Response) {
   response.json({ success: true, data: { user: request.authUser ?? null } });
 }
+

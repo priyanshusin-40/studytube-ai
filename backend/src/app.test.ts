@@ -13,6 +13,7 @@ describe('API', () => {
     const response = await request(app).get('/api/health').set('Origin', 'http://localhost:5173');
     expect(response.status).toBe(200);
     expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(response.headers['access-control-allow-credentials']).toBe('true');
   });
 
   it('rejects an unconfigured browser origin without exposing internals', async () => {
@@ -55,3 +56,4 @@ describe('API', () => {
     expect(response.body.error.code).toBe('ROUTE_NOT_FOUND');
   });
 });
+

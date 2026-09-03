@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { api } from '../lib/api';
+import { api, setAuthRequiredHandler } from '../lib/api';
 import type { User } from '../types';
 
 interface AuthValue {
@@ -17,14 +17,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    void api.me().then(({ user: current }) => setUser(current)).catch(() => setUser(null)).finally(() => setLoading(false));
+    let active = true;
+    setAuthRequiredHandler(() => {
+      if (active) setUser(null);
+    });
+    void api.me()
+      .then(({ user: current }) => { if (active) setUser(current); })
+      .catch(() => { if (active) setUser(null); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => {
+      active = false;
+      setAuthRequiredHandler(undefined);
+    };
   }, []);
+
+  const confirmSession = async () => {
+    const { user: current } = await api.me();
+    if (!current) {
+      setUser(null);
+      throw new Error('Sign-in succeeded, but the browser did not establish a session. Please enable cookies and try again.');
+    }
+    setUser(current);
+  };
 
   const value = useMemo<AuthValue>(() => ({
     user,
     loading,
-    login: async (email, password) => setUser((await api.login(email, password)).user),
-    register: async (name, email, password) => setUser((await api.register(name, email, password)).user),
+    login: async (email, password) => { await api.login(email, password); await confirmSession(); },
+    register: async (name, email, password) => { await api.register(name, email, password); await confirmSession(); },
     logout: async () => { await api.logout(); setUser(null); },
   }), [loading, user]);
 
@@ -36,3 +56,4 @@ export function useAuth(): AuthValue {
   if (!value) throw new Error('useAuth must be used inside AuthProvider.');
   return value;
 }
+
