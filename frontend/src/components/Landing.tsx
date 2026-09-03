@@ -1,8 +1,17 @@
-import { ArrowRight, Captions, DatabaseZap, Link2, MessageCircleQuestion, Sparkles } from 'lucide-react';
+import { ArrowRight, Captions, DatabaseZap, Link2, MessageCircleQuestion, PlayCircle, Sparkles } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import type { Video } from '../types';
 import { ProgressCard } from './ProgressCard';
 
-export function Landing({ onAnalyze, loading, progress }: { onAnalyze: (url: string) => void; loading: boolean; progress: number }) {
+interface Props {
+  videos: Video[];
+  userName: string;
+  onOpenVideo: (id: string) => void;
+  onAnalyze: (url: string) => void;
+  loading: boolean;
+}
+
+export function Landing({ videos, userName, onOpenVideo, onAnalyze, loading }: Props) {
   const [url, setUrl] = useState('');
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -10,7 +19,7 @@ export function Landing({ onAnalyze, loading, progress }: { onAnalyze: (url: str
   };
 
   return (
-    <main className="relative flex min-h-full flex-1 overflow-y-auto">
+    <main className="relative flex min-w-0 flex-1">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -right-24 top-10 h-80 w-80 rounded-full bg-violet/10 blur-3xl dark:bg-violet/15" />
         <div className="absolute bottom-0 left-[15%] h-72 w-72 rounded-full bg-coral/10 blur-3xl" />
@@ -18,6 +27,7 @@ export function Landing({ onAnalyze, loading, progress }: { onAnalyze: (url: str
       </div>
       <div className="relative mx-auto flex w-full max-w-6xl flex-col justify-start px-4 py-10 sm:px-10 sm:py-14 lg:justify-center lg:py-20">
         <div className="mx-auto max-w-4xl text-center">
+          <p className="mb-3 text-sm font-semibold text-slate-500 dark:text-slate-300">Welcome back, {userName}</p>
           <div className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full border border-violet/20 bg-violet/[0.07] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-violet dark:bg-violet/15 sm:mb-7 sm:px-4 sm:text-xs sm:tracking-[0.15em]">
             <Sparkles size={14} /> Learn at the speed of curiosity
           </div>
@@ -43,10 +53,10 @@ export function Landing({ onAnalyze, loading, progress }: { onAnalyze: (url: str
                 />
               </label>
               <button disabled={!url.trim()} className="group flex h-12 items-center justify-center gap-2 rounded-[20px] bg-ink px-6 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-violet disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-ink dark:hover:bg-violet dark:hover:text-white">
-                Analyze video <ArrowRight size={17} className="transition group-hover:translate-x-0.5" />
+                Process video <ArrowRight size={17} className="transition group-hover:translate-x-0.5" />
               </button>
             </form>
-          ) : <ProgressCard step={progress} />}
+          ) : <ProgressCard />}
         </div>
 
         {!loading && (
@@ -66,6 +76,20 @@ export function Landing({ onAnalyze, loading, progress }: { onAnalyze: (url: str
               );
             })}
           </div>
+        )}
+        {!loading && videos.length > 0 && (
+          <section className="mx-auto mt-12 w-full max-w-4xl sm:mt-16">
+            <div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet">Your library</p><h2 className="mt-1 font-display text-xl font-bold">Continue learning</h2></div><span className="text-xs text-slate-400">{videos.length} video{videos.length === 1 ? '' : 's'}</span></div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {videos.slice(0, 4).map((video) => (
+                <button key={video.id} onClick={() => onOpenVideo(video.id)} className="group flex min-w-0 items-center gap-3 rounded-2xl border border-black/[0.06] bg-white/70 p-3 text-left backdrop-blur transition hover:-translate-y-0.5 hover:border-violet/25 dark:border-white/[0.08] dark:bg-white/[0.04]">
+                  {video.thumbnailUrl ? <img src={video.thumbnailUrl} alt="" className="h-14 w-24 shrink-0 rounded-xl object-cover" /> : <div className="grid h-14 w-24 shrink-0 place-items-center rounded-xl bg-violet/10 text-violet"><PlayCircle size={20} /></div>}
+                  <span className="min-w-0 flex-1"><span className="block truncate text-xs font-bold group-hover:text-violet">{video.title}</span><span className="mt-1 block truncate text-[10px] text-slate-400">{new Date(video.updatedAt).toLocaleDateString()} · {video.transcriptSource === 'gemini-audio' ? 'Audio transcript' : 'Captions'} · {video.transcriptStatus}</span></span>
+                  <ArrowRight className="shrink-0 text-slate-300 group-hover:text-violet" size={16} />
+                </button>
+              ))}
+            </div>
+          </section>
         )}
       </div>
     </main>

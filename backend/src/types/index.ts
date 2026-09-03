@@ -41,3 +41,10 @@ export interface ChatMessage {
   sources: SourceReference[];
   createdAt: string;
 }
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+}

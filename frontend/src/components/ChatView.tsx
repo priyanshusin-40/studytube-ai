@@ -16,7 +16,15 @@ interface Props {
 export function ChatView({ chat, sending, dark, onToggleTheme, onMenu, onNewVideo, onSend }: Props) {
   const [value, setValue] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chat.messages, sending]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScroll = useRef(true);
+  useEffect(() => {
+    shouldAutoScroll.current = true;
+    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ block: 'end' }));
+  }, [chat.id]);
+  useEffect(() => {
+    if (shouldAutoScroll.current) bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [chat.messages, sending]);
 
   const submit = async () => {
     const question = value.trim();
@@ -41,7 +49,10 @@ export function ChatView({ chat, sending, dark, onToggleTheme, onMenu, onNewVide
         <button onClick={onNewVideo} className="hidden min-h-11 items-center gap-2 rounded-xl border border-black/[0.06] bg-white px-3.5 py-2.5 text-xs font-bold hover:border-violet/30 hover:text-violet dark:border-white/10 dark:bg-white/5 sm:flex"><Plus size={15} /> New video</button>
       </header>
 
-      <div className="scrollbar flex-1 overflow-y-auto">
+      <div ref={scrollRef} onScroll={() => {
+        const element = scrollRef.current;
+        if (element) shouldAutoScroll.current = element.scrollHeight - element.scrollTop - element.clientHeight < 140;
+      }} className="scrollbar flex-1 overscroll-contain overflow-y-auto">
         <div className="mx-auto w-full max-w-4xl px-3 py-6 sm:px-8 sm:py-10">
           {chat.messages.length === 0 ? (
             <div className="mx-auto flex max-w-2xl flex-col items-center py-10 text-center sm:py-16">

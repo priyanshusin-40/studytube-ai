@@ -24,10 +24,28 @@ describe('API', () => {
     });
   });
 
-  it('validates video processing input before accessing services', async () => {
+  it('protects video processing before request data reaches services', async () => {
     const response = await request(app).post('/api/videos/process').send({ url: '' });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe('AUTH_REQUIRED');
+  });
+
+  it.each([
+    ['get', '/api/videos'],
+    ['get', '/api/chats'],
+    ['post', '/api/chats'],
+  ] as const)('requires authentication for %s %s', async (method, path) => {
+    const response = await request(app)[method](path).send({});
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe('AUTH_REQUIRED');
+  });
+
+  it('validates registration input before database access', async () => {
+    const response = await request(app).post('/api/auth/register').send({
+      name: 'A', email: 'not-an-email', password: 'short',
+    });
+    expect(response.status).toBe(400);
     expect(response.body.error.code).toBe('VALIDATION_ERROR');
   });
 

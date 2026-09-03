@@ -1,4 +1,4 @@
-import type { Chat, ChatSummary, Message, Video } from '../types';
+import type { Chat, ChatSummary, Message, User, Video } from '../types';
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:4000/api';
 
@@ -13,6 +13,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   try {
     response = await fetch(`${API_URL}${path}`, {
       ...options,
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json', ...options?.headers },
     });
   } catch {
@@ -27,6 +28,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  me: () => request<{ user: User | null }>('/auth/me'),
+  register: (name: string, email: string, password: string) => request<{ user: User }>('/auth/register', {
+    method: 'POST', body: JSON.stringify({ name, email, password }),
+  }),
+  login: (email: string, password: string) => request<{ user: User }>('/auth/login', {
+    method: 'POST', body: JSON.stringify({ email, password }),
+  }),
+  logout: () => request<void>('/auth/logout', { method: 'POST' }),
   processVideo: (url: string) => request<{ video: Video; reused: boolean }>('/videos/process', {
     method: 'POST', body: JSON.stringify({ url }),
   }),

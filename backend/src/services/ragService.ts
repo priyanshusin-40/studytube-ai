@@ -18,8 +18,19 @@ export async function answerQuestion(
   question: string,
   history: ConversationTurn[],
 ): Promise<{ answer: string; sources: SourceReference[] }> {
+  const startedAt = performance.now();
+  const embeddingStartedAt = performance.now();
   const embedding = await createQueryEmbedding(question);
+  const searchStartedAt = performance.now();
   const sources = await searchTranscript(videoId, embedding);
+  const answerStartedAt = performance.now();
   const answer = await aiProvider.answer({ question, context: buildContext(sources), history });
+  console.info('[rag]', {
+    embeddingMs: Math.round(searchStartedAt - embeddingStartedAt),
+    searchMs: Math.round(answerStartedAt - searchStartedAt),
+    answerMs: Math.round(performance.now() - answerStartedAt),
+    totalMs: Math.round(performance.now() - startedAt),
+    sourceCount: sources.length,
+  });
   return { answer, sources };
 }

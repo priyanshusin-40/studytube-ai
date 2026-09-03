@@ -1,8 +1,9 @@
-import { Edit3, MessageSquareText, PanelLeftClose, PanelLeftOpen, Plus, Trash2, X } from 'lucide-react';
-import type { ChatSummary } from '../types';
+import { Edit3, LogOut, MessageSquareText, PanelLeftClose, PanelLeftOpen, Plus, Trash2, X } from 'lucide-react';
+import type { ChatSummary, User } from '../types';
 import { Brand } from './Brand';
 
 interface Props {
+  user: User;
   chats: ChatSummary[];
   activeId: string | null;
   open: boolean;
@@ -13,13 +14,14 @@ interface Props {
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  onLogout: () => void;
 }
 
-export function Sidebar({ chats, activeId, open, collapsed, onClose, onToggleCollapse, onNewVideo, onSelect, onDelete, onRename }: Props) {
+export function Sidebar({ user, chats, activeId, open, collapsed, onClose, onToggleCollapse, onNewVideo, onSelect, onDelete, onRename, onLogout }: Props) {
   return (
     <>
       {open && <button aria-label="Close sidebar" onClick={onClose} className="fixed inset-0 z-40 bg-ink/30 backdrop-blur-sm lg:hidden" />}
-      <aside className={`fixed inset-y-0 left-0 z-50 flex w-[min(88vw,320px)] flex-col border-r border-black/[0.06] bg-[#f3f1eb] p-4 transition-[width,transform] duration-200 dark:border-white/[0.07] dark:bg-[#171625] lg:static lg:translate-x-0 ${collapsed ? 'lg:w-20 lg:px-3' : 'lg:w-[290px]'} ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 flex w-[min(88vw,320px)] flex-col border-r border-black/[0.06] bg-[#f3f1eb] p-4 transition-[width,transform] duration-200 dark:border-white/[0.07] dark:bg-[#171625] lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 ${collapsed ? 'lg:w-20 lg:px-3' : 'lg:w-[290px]'} ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className={`flex items-center py-2 ${collapsed ? 'lg:justify-center lg:px-0' : 'justify-between px-2'}`}>
           <div className={collapsed ? 'lg:hidden' : ''}><Brand /></div>
           <button onClick={onClose} className="rounded-xl p-2 text-slate-500 hover:bg-black/5 lg:hidden" aria-label="Close sidebar"><X size={19} /></button>
@@ -55,8 +57,10 @@ export function Sidebar({ chats, activeId, open, collapsed, onClose, onToggleCol
             </div>
           ))}
         </div>
-        <div className={`rounded-2xl border border-black/[0.05] bg-white/50 p-3 text-[10px] leading-4 text-slate-500 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-slate-400 ${collapsed ? 'lg:hidden' : ''}`}>
-          <span className="font-bold text-ink dark:text-white">Privacy note</span><br />Videos are indexed in your configured database. API keys stay on the server.
+        <div className={`mt-3 flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-white/55 p-2.5 dark:border-white/[0.06] dark:bg-white/[0.04] ${collapsed ? 'lg:justify-center' : ''}`}>
+          <div title={user.name} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet text-xs font-bold text-white">{user.name.slice(0, 1).toUpperCase()}</div>
+          <div className={`min-w-0 flex-1 ${collapsed ? 'lg:hidden' : ''}`}><div className="truncate text-xs font-bold">{user.name}</div><div className="truncate text-[10px] text-slate-400">{user.email}</div></div>
+          <button onClick={onLogout} title="Sign out" className={`grid min-h-10 min-w-10 place-items-center rounded-xl text-slate-400 hover:bg-coral/10 hover:text-coral ${collapsed ? 'lg:hidden' : ''}`} aria-label="Sign out"><LogOut size={16} /></button>
         </div>
       </aside>
     </>

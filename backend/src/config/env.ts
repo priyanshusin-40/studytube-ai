@@ -29,6 +29,11 @@ const schema = z.object({
   MAX_TRANSCRIPT_CHARS: z.coerce.number().int().positive().default(2_000_000),
   AI_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
   AI_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+  AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60_000),
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+  SESSION_COOKIE_NAME: z.string().regex(/^[A-Za-z0-9_-]+$/).default('studytube_session'),
+  SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
+  BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
 });
 
 const parsed = schema.safeParse(process.env);
